@@ -1,0 +1,3 @@
+No licence has been selected in this prepared package.
+
+Before making the repository public, choose a licence approved by the project owners and institution, for example MIT, BSD-3-Clause, Apache-2.0, or another licence appropriate for the code and dependencies.
