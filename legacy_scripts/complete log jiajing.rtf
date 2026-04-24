@@ -1,0 +1,131 @@
+{\rtf1\ansi\ansicpg1252\cocoartf2513
+\cocoatextscaling0\cocoaplatform0{\fonttbl\f0\fswiss\fcharset0 Helvetica;}
+{\colortbl;\red255\green255\blue255;\red27\green27\blue27;\red255\green255\blue255;}
+{\*\expandedcolortbl;;\cssrgb\c14118\c14118\c14118;\cssrgb\c100000\c100000\c100000;}
+\paperw11900\paperh16840\margl1440\margr1440\vieww10800\viewh8400\viewkind0
+\deftab720
+\pard\pardeftab720\partightenfactor0
+
+\f0\fs29\fsmilli14667 \cf2 \cb3 \expnd0\expndtw0\kerning0
+\outl0\strokewidth0 \strokec2 ####\
+mkdir GWAS_2016\
+cd /scratch/prj/bcn_ml_als/DiseaseCapsule/GWAS_2016\
+\'a0\
+pval=p_0.001\
+for gwas in lmm meta\
+do\
+cd /scratch/prj/bcn_ml_als/DiseaseCapsule/GWAS_2016/\
+mkdir $pval\
+mkdir $pval/$gwas\
+for i in \{1..22\}\
+do\
+awk '\{if ($6>=0.01 && $9<=0.001) print $2\}' summary_statistics/als.sumstats.$gwas.chr$i.txt >> $pval/$gwas/sig_snps.txt\
+done\
+wc -l $pval/$gwas/sig_snps.txt\
+done\
+\'a0\
+# get significant SNPs\
+pval=p_0.001\
+for gwas in lmm meta # gwas=lmm # lmm meta\
+do\
+cd /scratch/users/k20066216/vcf_imputed\
+for file in sFR sBE sCZ sFIN sGER sIR sSW sIB sUS sUK sIT sNL\
+do\
+/scratch/users/k20066216/plink\'a0 --bfile /scratch/users/k20066216/vcf_imputed/$file --extract /scratch/prj/bcn_ml_als/DiseaseCapsule/GWAS_2016/$pval/$gwas/sig_snps.txt\'a0 --threads 16 --make-bed --out\'a0 /scratch/prj/bcn_ml_als/DiseaseCapsule/GWAS_2016/$pval/$gwas/$file.sig\
+done\
+done\
+\'a0\
+##### Just need to do once: get sig PM files for majority imputation, get labels.csv #####\
+pval=p_0.05\
+gwas=meta # meta\
+cd /scratch/prj/bcn_ml_als/DiseaseCapsule/GWAS_2016/$pval/$gwas\
+/scratch/users/k20066216/plink --bfile /scratch/prj/bcn_ml_als/DiseaseCapsule/GWAS_2016/$pval/$gwas/sNL.sig --make-bed\'a0 --merge-list /scratch/prj/bcn_ml_als/DiseaseCapsule/final_test/merge.txt\'a0 --threads 16 --out /scratch/prj/bcn_ml_als/DiseaseCapsule/GWAS_2016/$pval/$gwas/pm.sig\
+awk -v OFS="\\t" '\{print $1, $5, $6\}' pm.sig.fam > all.csv\
+# Add a continuous index starting from 0\
+awk -F ' ' 'BEGIN\{OFS="\\t"; print "idx\\tFID\\tSex\\tPheno"\} \{print NR-1, $1, $2, $3\}' all.csv > pm_labels.csv\
+rm all.csv\
+for i in \{1..22\}\
+do\
+/scratch/users/k20066216/plink --bfile /scratch/prj/bcn_ml_als/DiseaseCapsule/GWAS_2016/$pval/$gwas/pm.sig --chr $i --recode vcf --out /scratch/prj/bcn_ml_als/DiseaseCapsule/GWAS_2016/$pval/$gwas/pm.sig.$i &\
+done\
+conda activate r_env\
+for i in \{1..22\};do perl\'a0 /scratch/prj/bcn_ml_als/annovar/convert2annovar.pl -format vcf4old\'a0 pm.sig.$i.vcf > chr$i.avinput 2>/dev/null & done\
+for i in \{1..22\};do perl /scratch/prj/bcn_ml_als/annovar/annotate_variation.pl -out chr$i -build hg19 chr$i.avinput\'a0 /scratch/prj/bcn_ml_als/annovar/humandb & done\
+for i in \{1..22\};do cat chr$i.variant_function|perl -ne 'my@a=split;my$gene; if ($a[0] eq "intergenic")\{my@aaa=$a[1]=~/(\\S+)\\(dist=(\\S+)\\),(\\S+)\\(dist=(\\S+)\\)$/g;if($2 eq "NONE" )\{$gene=$3;\}elsif( $4 eq "NONE")\{$gene=$1;\}elsif ($2<=$4)\{$gene=$1;print "$a[2]\\t$a[3]\\t$gene\\t$a[0]\\n"\} else\{\'a0 $gene= $3;print "$a[2]\\t$a[3]\\t$gene\\t$a[0]\\n"\} \}else \{ if($a[0]=~/;/)\{my@funs=split/;/,$a[0];$a[1]=~s/\\(\\S*?\\)//g; my@genes=split/;/,$a[1]; for my$i(0..$#funs)\{ my@subgenes=split/,/,$genes[$i];for my$g(@subgenes)\{my$gg=$g;$gg=~s/\\(\\S+\\)//g; print "$a[2]\\t$a[3]\\t$gg\\t$funs[$i]\\n";\}\'a0 \}\}else\{ $a[1]=~s/\\(\\S*?\\)//g;\'a0 my@subgenes=split/,/,$a[1];for my$g(@subgenes)\{my$gg=$g;$gg=~s/\\(\\S+//g; print "$a[2]\\t$a[3]\\t$gg\\t$a[0]\\n";\} \} \} '|sort -u|sed 's/\\//_/g'|sort -k2n -k3 -k4 >chr$i.variant_function.uniqGene ;echo chr$i;done\
+cp /scratch/prj/bcn_ml_als/DiseaseCapsule/final_test/p_0.01/get_ma* .\
+conda activate capsule\
+for i in \{1..22\};do sbatch -p cpu get_major.sh $i;done\
+####\
+#make all_labels.csv, I have checked the order is the same\
+awk -v OFS="\\t" '\{print $1, $5, $6\}' all.sig.fam > all.csv\
+# Add a continuous index starting from 0\
+awk -F ' ' 'BEGIN\{OFS="\\t"; print "idx\\tFID\\tSex\\tPheno"\} \{print NR-1, $1, $2, $3\}' all.csv > all_labels.csv\
+rm all.csv\
+#####\
+\'a0\
+gwas=meta\
+# merge together\
+cd /scratch/prj/bcn_ml_als/DiseaseCapsule/GWAS_2016/$pval/$gwas/\
+/scratch/users/k20066216/plink --bfile /scratch/prj/bcn_ml_als/DiseaseCapsule/GWAS_2016/$pval/$gwas/independent.sig --make-bed\'a0 --merge-list\'a0 /scratch/prj/bcn_ml_als/DiseaseCapsule/GWAS_2016/merge_list.txt\'a0 --threads 16 --out /scratch/prj/bcn_ml_als/DiseaseCapsule/GWAS_2016/$pval/$gwas/all.sig\
+\'a0\
+### split datasets ###\
+AND...\
+### at the same time###\
+for i in \{1..22\}\
+do\
+/scratch/users/k20066216/plink --bfile /scratch/prj/bcn_ml_als/DiseaseCapsule/GWAS_2016/$pval/$gwas/all.sig --chr $i --recode vcf --out /scratch/prj/bcn_ml_als/DiseaseCapsule/GWAS_2016/$pval/$gwas/all.sig.$i &\
+done\
+\'a0\
+# use the majority SNPs from Project Mine data only\
+# cp /scratch/prj/bcn_ml_als/DiseaseCapsule/all_sBE/gene_strand.txt .\
+cp /scratch/prj/bcn_ml_als/DiseaseCapsule/GWAS_2016/p_0.05/$gwas/get_ge* .\
+\'a0\
+conda activate capsule\
+for i in \{1..22\};do sbatch -p nd_bioinformatics_cpu --job-name=$pval.$gwas.$i get_gene.sh $i; done\
+\'a0\
+cp /scratch/prj/bcn_ml_als/DiseaseCapsule/final_test/p_0.005/com* .\
+sbatch -p cpu combine.sh\
+\'a0\
+mkdir ind\
+cut -f 1 /scratch/prj/bcn_ml_als/DiseaseCapsule/final_test/independent_labels.csv > ind/ind.idx\
+\'a0\
+# 'train_val.balanced.idx' and 'train_val.unique.idx can be shared across models\
+# python split_datasets_for_multi-external_datasets.py\
+# for ukbiobank dataset, ukb.idx is test.idx\
+\'a0\
+cp /scratch/prj/bcn_ml_als/DiseaseCapsule/final_test/p_0.005/ind/*.idx ind\
+\'a0\
+pval=p_0.05\
+gwas=meta\
+for file in ind\
+do\
+cd /scratch/prj/bcn_ml_als/DiseaseCapsule/GWAS_2016/$pval/$gwas/$file\
+#cp /scratch/prj/bcn_ml_als/DiseaseCapsule/final_test/p_0.01_test/$file/test.idx .\
+cp /scratch/prj/bcn_ml_als/DiseaseCapsule/final_test/p_0.005/ukb/*ML.py .\
+cp /scratch/prj/bcn_ml_als/DiseaseCapsule/final_test/p_0.005/ukb/*GPU.py .\
+cp /scratch/prj/bcn_ml_als/DiseaseCapsule/final_test/p_0.005/ukb/*.sh .\
+\'a0\
+conda activate capsule\
+sbatch -p cpu --mem-per-cpu=1000G\'a0 --ntasks=2 --cpus-per-task=1 --job-name=svm.$file --time=48:00:00 svm.sh\
+sbatch -p cpu --mem-per-cpu=900G --ntasks=3 --cpus-per-task=1 --job-name=lr.$file lr.sh\
+sbatch -p cpu --mem-per-cpu=900G\'a0 --ntasks=3 --cpus-per-task=1 --job-name=rf.$file rf.sh\
+sbatch -p cpu --mem-per-cpu=1000G --ntasks=2 --cpus-per-task=1 --job-name=adab.$file --time=48:00:00 adab.sh\'a0\
+\'a0\
+conda activate gpu\
+sbatch -p nd_bioinformatics_cpu --mem-per-cpu=900G --ntasks=6 --cpus-per-task=2 --job-name=cap.$file --no-kill --time=72:00:00\'a0 cap.sh\
+sbatch -p cpu --mem-per-cpu=900G --ntasks=3 --cpus-per-task=1 --job-name=mlp.$file mlp.sh\
+sbatch -p cpu --mem-per-cpu=900G\'a0 --ntasks=2 --cpus-per-task=1 --job-name=cnn.$file\'a0 cnn.sh\
+\'a0\
+# nd_bioinformatics_cpu\
+\'a0\
+done\
+\'a0\
+###\
+check result:\
+cd /scratch/prj/bcn_ml_als/DiseaseCapsule/GWAS_2016/\
+# see loo\
+# for file in p_0.05/lmm/s*/capsule_pca_1.0.out.csv;do if [[ $file != *"_half"* ]]; then echo "File: $file";cat "$file";fi; done\
+for file in p_0.05/meta/s*/capsule_pca_1.0.out.csv;do if [[ $file != *"_half"* ]]; then cat "$file";fi; done\
+# see half\
+for file in p_0.05/meta/s*/capsule_pca_1.0.out.csv;do if [[ $file == *"_half"* ]]; then cat "$file";fi;done\
+}
