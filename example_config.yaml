@@ -1,0 +1,24 @@
+# Example configuration values. The provided shell scripts use environment variables,
+# but this file documents the paths and parameters that need to be set.
+
+gwas_sumstats_dir: /path/to/summary_statistics
+plink_input_dir: /path/to/plink_bfiles
+plink_bin: /path/to/plink
+annovar_dir: /path/to/annovar
+annovar_humandb: /path/to/annovar/humandb
+labels_file: labels.csv
+p_threshold: 0.05
+gwas_type: meta
+strata:
+  - sFR
+  - sBE
+  - sCZ
+  - sFIN
+  - sGER
+  - sIR
+  - sSW
+  - sIB
+  - sUS
+  - sUK
+  - sIT
+  - sNL
