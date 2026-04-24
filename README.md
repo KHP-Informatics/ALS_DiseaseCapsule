@@ -17,7 +17,7 @@ The scripts are intended to make the computational workflow transparent and repr
 ## Repository structure
 
 ```text
-ALS_DiseaseCapsule_github_material/
+ALS_DiseaseCapsule/
 ├── README.md
 ├── environment.yml
 ├── config/
