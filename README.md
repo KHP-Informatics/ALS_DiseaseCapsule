@@ -234,7 +234,7 @@ results/capsnet_balanced/capsnet_model.pt
 results/capsnet_balanced/roc_curve.png
 ```
 
-## Leave-one-out and leave-half-out experiments
+## Leave-one-out and leave-half-out experiments, and external validation
 
 The manuscript used national cohort-based splits. These can be reproduced by creating index files corresponding to the held-out national cohort or half-cohort, then passing those index files to the same Gene-PCA and model-training scripts.
 
