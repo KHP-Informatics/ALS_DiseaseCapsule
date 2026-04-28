@@ -257,7 +257,7 @@ The `legacy_scripts/` directory contains the original working scripts and log fi
 
 ## Citation
 
-If you use this code, please cite the manuscript **J Hu, et al. "Towards a deep-learning genomic tool for risk stratification and diagnostic support in sporadic ALS", Merxiv, 2025** and the original DiseaseCapsule paper.
+If you use this code, please cite the manuscript **J Hu, et al. "Towards a deep-learning genomic tool for risk stratification and diagnostic support in sporadic ALS", medRxiv, 2025** and the original DiseaseCapsule paper.
 
 ## Disclaimer
 
