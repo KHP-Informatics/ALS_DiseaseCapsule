@@ -52,7 +52,7 @@ The pipeline follows the main steps described in the manuscript:
 
 ## Requirements
 
-The cleaned scripts require Python 3.9+ and the packages listed in `environment.yml`.
+The cleaned scripts require Python 3.9+ and the software version and packages listed in `environment.yml`.
 
 Create the environment with:
 
