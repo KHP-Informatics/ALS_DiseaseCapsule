@@ -2,6 +2,8 @@
 
 This repository contains the analysis code used for the manuscript **"Towards a deep-learning genomic tool for risk stratification and diagnostic support in sporadic ALS"**.
 
+The trained CapsuleNet weights of the model trained on the full 2016 ALS GWAS data can be found in `capsule_pca_1.0model_1.pt`   
+
 The work builds on the published DiseaseCapsule framework and architecture from Luo et al. The original DiseaseCapsule code is available here:
 
 <https://github.com/HaploKit/DiseaseCapsule>
@@ -20,6 +22,7 @@ The scripts are intended to make the computational workflow transparent and repr
 ALS_DiseaseCapsule/
 ├── README.md
 ├── environment.yml
+├── capsule_pca_1.0model_1.pt
 ├── config/
 │   └── example_config.yaml
 ├── data/
